@@ -1,0 +1,151 @@
+﻿project:
+  name: "ICASSP LiDAR Drone Detect"
+  version: "1.0"
+
+paths:
+  dataset_root: "G:/Anti-UAV/MMUAV_dataset/Anti_UAV_data/train"
+  output_root: "G:/Anti-UAV/MMUAV_dataset/tmp/26.2.2"
+  seq_dir_pattern: "seq{sequence}"
+  output_seq_dir_pattern: "{sequence}"
+  subfolders:
+    ground_truth: "ground_truth"
+    lidar_360: "lidar_360"
+    livox_avia: "livox_avia"
+    radar_enhance_pcl: "radar_enhance_pcl"
+  output_subfolders:
+    gt_xyz: "gt_xyz"
+    lidar_360_xyz: "lidar_360_xyz"
+    livox_avia_xyz: "livox_avia_xyz"
+    lidar_360_filtered: "lidar_360_filtered"
+    drone_output: "drone_output"
+
+run:
+  process_all_sequences: true
+  sequences: [1, 2, 3]
+  steps:
+    convert_ground_truth: true
+    convert_lidar_360: true
+    convert_livox_avia: true
+    filter_lidar_360: true
+    run_avia_cluster: true
+    run_cluster_pipeline: true
+
+data_converter:
+  lidar_360_height_threshold: 3.5
+
+# data_loader:
+#   batch_size: 32
+#   shuffle: true
+
+clustering:
+  voxel_size: 0.2
+  min_centroid_z: 6
+  frames_num_fallback_ratio: 0.5
+  use_zero_for_empty_segments: true
+  param_sets:
+    - eps: 2
+      min_samples: 10
+      max_points_per_cluster: 10000
+      min_points_per_cluster: 100
+      file_counts: 100
+      cluster_volume: 0.3
+      frames_num: 2
+    - eps: 2
+      min_samples: 10
+      max_points_per_cluster: 10000
+      min_points_per_cluster: 100
+      file_counts: 100
+      cluster_volume: 0.3
+      frames_num: 5
+    - eps: 2
+      min_samples: 10
+      max_points_per_cluster: 10000
+      min_points_per_cluster: 100
+      file_counts: 100
+      cluster_volume: 0.3
+      frames_num: 10
+  top_n: 1
+
+pipeline:
+  save_clusters_by_source_first_param_only: true
+  output_filenames:
+    all_clusters: "params_{index}_all_clusters.json"
+    selected_cluster: "params_{index}_selected_cluster.json"
+    output_ply: "output_{index}.ply"
+    output_top_ply: "output_{index}_top{top_n}.ply"
+    output_filtered_ply: "output_{index}_filtered.ply"
+    metrics_plot: "metrics_{index}.png"
+    metrics_top_plot: "metrics_{index}_top{top_n}.png"
+    metrics_filtered_plot: "metrics_{index}_filtered.png"
+
+visualization:
+  save_top_clusters: true
+  save_all_clusters: true
+  save_metrics_plot: true
+  save_colored_ply: true
+  plot:
+    figsize: [12, 8]
+    bar_width: 0.2
+    log_scale: true
+  correct_label_distance_threshold: 5.0
+  fixed_color: [100, 100, 100]
+
+avia_cluster:
+  eps: 2
+  min_samples: 10
+  merge_distance_threshold: 5
+
+tools:
+  output_txt:
+    enabled: false
+    mode: "pkl_strip_list"
+    fixed_color: [100, 100, 100]
+    pkl_input: "E:/CCFA/report_poster/Experiments/mmdetection3d/data/s3dis/s3dis_infos_Area_5.pkl"
+    pkl_output: "E:/CCFA/report_poster/Experiments/mmdetection3d/data/s3dis/s3dis_infos_Area_5.pkl"
+    merge_xyz:
+      input_dirs: []
+      output_file: ""
+    rename_folders:
+      directory: ""
+    remove_points:
+      a_file: ""
+      b_file: ""
+      c_file: ""
+  radar:
+    sequence: 99
+    dataset_root: "G:/Anti-UAV/MMUAV_dataset/Anti_UAV_data/train"
+    output_root: "G:/"
+    input_subfolder: "radar_enhance_pcl"
+    output_subfolder: ""
+    lidar_360_subfolder: "lidar_360"
+    lidar_360_height_threshold: 0
+    run_lidar_360_filter: false
+  env_check:
+    batch: 2
+    length: 64
+    dim: 16
+    d_state: 16
+    d_conv: 4
+    expand: 2
+  legacy_point_cluster:
+    enabled: false
+    voxel_size: 0.5
+    lidar_folder: ""
+    result_path: ""
+    output_filenames:
+      output_ply: "output_{index}.ply"
+      metrics_plot: "metrics_{index}.png"
+      filtered_ply: "filtered_{index}.ply"
+    param_sets:
+      - eps: 2
+        min_samples: 10
+        max_points_per_cluster: 10000
+        min_points_per_cluster: 10
+        cluster_volume: 0.1
+        frames_num: 3
+      - eps: 2
+        min_samples: 10
+        max_points_per_cluster: 10000
+        min_points_per_cluster: 10
+        cluster_volume: 0.1
+        frames_num: 5
